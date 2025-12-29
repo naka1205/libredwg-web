@@ -86,8 +86,11 @@ jobs:
           -s EXPORT_ES6=1 \
           -s MODULARIZE=1 \
           -s EXPORT_NAME="createModule" \
-          -sEXPORTED_RUNTIME_METHODS=FS,ENV,ccall,cwrap,UTF8ToString,stringToNewUTF8,setValue \
-          --emit-tsd libredwg-web.d.ts
+          -sEXPORTED_RUNTIME_METHODS=FS,ENV,ccall,cwrap,UTF8ToString,stringToNewUTF8,setValue
+
+    - name: Copy existing type definitions
+      working-directory: build-wasm
+      run: cp ../bindings/javascript/wasm/libredwg-web.d.ts .
 
     - name: List build artifacts
       working-directory: build-wasm
