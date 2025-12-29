@@ -937,10 +937,11 @@ EMSCRIPTEN_BINDINGS(libredwg_api) {
     .property("x", &dwg_point_2d::x)
     .property("y", &dwg_point_2d::y);
 
-  DEFINE_FUNC(dwg_ent_get_POINT2D);
-  DEFINE_FUNC(dwg_ent_set_POINT2D);
-  DEFINE_FUNC(dwg_ent_get_POINT3D);
-  DEFINE_FUNC(dwg_ent_set_POINT3D);
+  // Commented out: raw pointers not allowed in newer emscripten
+  // DEFINE_FUNC(dwg_ent_get_POINT2D);
+  // DEFINE_FUNC(dwg_ent_set_POINT2D);
+  // DEFINE_FUNC(dwg_ent_get_POINT3D);
+  // DEFINE_FUNC(dwg_ent_set_POINT3D);
   DEFINE_FUNC(dwg_ent_get_STRING);
   DEFINE_FUNC(dwg_ent_set_STRING);
   DEFINE_FUNC(dwg_ent_get_UTF8);
