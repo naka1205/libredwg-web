@@ -1,0 +1,120 @@
+name: Build WASM
+
+on:
+  workflow_dispatch:  # 手动触发
+  push:
+    branches:
+      - dev
+      - fix/*
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'bindings/javascript/**'
+
+jobs:
+  build-wasm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y autoconf automake libtool texinfo gperf
+
+    - name: Setup Emscripten
+      uses: mymindstorm/setup-emsdk@v14
+      with:
+        version: '3.1.51'
+        actions-cache-folder: 'emsdk-cache'
+
+    - name: Verify Emscripten
+      run: |
+        emcc --version
+        which emcc
+
+    - name: Generate configure script
+      run: sh autogen.sh
+
+    - name: Create build directory
+      run: mkdir -p build-wasm
+
+    - name: Configure with Emscripten
+      working-directory: build-wasm
+      run: |
+        emconfigure ../configure \
+          CFLAGS="-O2 -sUSE_ZLIB=1" \
+          CC=emcc \
+          --enable-release \
+          --disable-docs \
+          --disable-write \
+          --disable-python \
+          --disable-bindings \
+          --disable-shared \
+          --disable-json \
+          --disable-dxf \
+          --enable-partial \
+          --enable-experimental
+
+    - name: Build object files
+      working-directory: build-wasm
+      run: emmake make -j$(nproc)
+
+    - name: Build WASM module
+      working-directory: build-wasm
+      run: |
+        emcc ../bindings/javascript/embind/*.cpp src/*.o \
+          -O2 \
+          -lembind \
+          -std=c++11 \
+          -Isrc \
+          -I../src \
+          -I../include \
+          -o libredwg-web.js \
+          -s ALLOW_MEMORY_GROWTH=1 \
+          -s EXPORT_ES6=1 \
+          -s MODULARIZE=1 \
+          -s EXPORT_NAME="createModule" \
+          -sEXPORTED_RUNTIME_METHODS=FS,ENV,ccall,cwrap,UTF8ToString,stringToNewUTF8,setValue \
+          --emit-tsd libredwg-web.d.ts
+
+    - name: List build artifacts
+      working-directory: build-wasm
+      run: |
+        ls -la libredwg-web.*
+        echo "=== File sizes ==="
+        du -h libredwg-web.*
+
+    - name: Upload WASM artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: libredwg-wasm
+        path: |
+          build-wasm/libredwg-web.js
+          build-wasm/libredwg-web.wasm
+          build-wasm/libredwg-web.d.ts
+        retention-days: 30
+
+    - name: Copy to bindings directory
+      run: |
+        cp build-wasm/libredwg-web.js bindings/javascript/wasm/
+        cp build-wasm/libredwg-web.wasm bindings/javascript/wasm/
+        cp build-wasm/libredwg-web.d.ts bindings/javascript/wasm/
+
+    - name: Upload updated bindings
+      uses: actions/upload-artifact@v4
+      with:
+        name: libredwg-web-bindings
+        path: bindings/javascript/wasm/
+        retention-days: 30

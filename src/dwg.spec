@@ -1591,16 +1591,23 @@ DWG_ENTITY (LINE)
           FIELD_RD (start.y, 20);
           FIELD_DD (end.y, FIELD_VALUE (start.y), 21);
 
-          if (FIELD_VALUE (z_is_zero))
-            {
-              FIELD_VALUE (start.z) = 0.0;
-              FIELD_VALUE (end.z) = 0.0;
-            }
-          else
-            {
-              FIELD_RD (start.z, 30);
-              FIELD_DD (end.z, FIELD_VALUE (start.z), 31);
-            }
+          // FIX: Always read Z coordinates regardless of z_is_zero flag
+          // The z_is_zero flag appears to be incorrectly decoded in some DWG files
+          DECODER {
+            FIELD_RD (start.z, 30);
+            FIELD_DD (end.z, FIELD_VALUE (start.z), 31);
+          }
+          ENCODER {
+            if (FIELD_VALUE (z_is_zero))
+              {
+                // Don't write Z when z_is_zero is true
+              }
+            else
+              {
+                FIELD_RD (start.z, 30);
+                FIELD_DD (end.z, FIELD_VALUE (start.z), 31);
+              }
+          }
           FIELD_3PT_TRACE (start, DD, 10);
           FIELD_3PT_TRACE (end, DD, 11);
         }
