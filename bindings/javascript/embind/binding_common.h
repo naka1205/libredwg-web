@@ -8,7 +8,7 @@ using namespace emscripten;
   function(#funcName, &funcName##_wrapper)
 
 #define DEFINE_FUNC_WITH_REF_POLICY(funcName)                                 \
-  function(#funcName, &funcName##_wrapper, return_value_policy::reference())
+  function(#funcName, &funcName##_wrapper, emscripten::return_value_policy::reference())
 
 
 typedef uintptr_t Dwg_Handle_Ptr;
